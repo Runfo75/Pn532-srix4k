@@ -1,12 +1,14 @@
 import serial
 from serial import SerialException
+#Make function to automatic open serial port
 def porta_com():
     global porta
+    #Windows
     for i in range(0,20):
         porta1=('COM'+str(i))
         try:
             seriale = serial.Serial(porta1, 115200, timeout=0.05)
-            seriale.write([85,85,0,0,0,0,0,255,3,253,212,20,1,23,0])
+            seriale.write([85,85,0,0,0,0,0,255,3,253,212,20,1,23,0]) # WAKE UP (55,55,0,0,0,0,0,FF,LEN (D4,14,1 - LEN=3),(100-LEN),D4,14,1,(256-212-20-1),0)
             response = seriale.readline()
             if len(response)==15:
                 try:
@@ -23,6 +25,7 @@ def porta_com():
                     pass
         except SerialException:
             pass
+    #Mac
     for i in range(0,9):
         porta1=('/dev/tty.usbserial-000'+str(i))
         try:
@@ -40,6 +43,7 @@ def porta_com():
                     pass
         except SerialException:
             pass
+    #Linux
     for i in range(0,9):
         porta1=('/dev/ttyUSB'+str(i))
         try:
@@ -59,6 +63,7 @@ def porta_com():
             pass
     print('Nessun PN532')
     porta=0
+#Read key function
 def leggi_chiave():
     global porta
     if porta==0:
@@ -69,14 +74,14 @@ def leggi_chiave():
     else:
         print ("Collegamento non effettuato con successo")
         return()
-    seriale.write([85,85,0,0,0,0,0,255,3,253,212,20,1,23,0])
+    seriale.write([85,85,0,0,0,0,0,255,3,253,212,20,1,23,0]) #Wake UP
     response = seriale.readline()
     if len(response)==15:
         pass
     else:
         print('Non funzionante')
         return()
-    seriale.write([0,0,255,5,251,212,74,1,3,0,222,0])
+    seriale.write([0,0,255,5,251,212,74,1,3,0,222,0]) 
     response = seriale.readline()
     if len(response)==6:
         pass
@@ -85,7 +90,7 @@ def leggi_chiave():
         retunr()
     seriale.write([0,0,255,4,252,212,66,6,0,228,0])
     response = seriale.readline()
-    seriale.write([0,0,255,4,252,212,66,6,0,228,0])
+    seriale.write([0,0,255,4,252,212,66,6,0,228,0]) #In windows is necesary repeat comand
     response = seriale.readline()
     if len(response)==17:
         pass
@@ -106,7 +111,7 @@ def leggi_chiave():
     print('UID:')
     seriale.write([0,0,255,3,253,212,66,11,223,0])
     response = seriale.readline()
-    if len(response)<24:
+    if len(response)<24: #if UID have byte 0A block the read process and is necessary repeat
         response1 = seriale.readline() 
         response=response+response1  
     if len(response)<24:
@@ -127,7 +132,7 @@ def leggi_chiave():
         if c>255: c=c-256
         seriale.write([0,0,255,4,252,212,66,8,i,c,0])
         response = seriale.readline()
-        if len(response)<20:
+        if len(response)<20: #if Block have byte 0A block the read process and is necessary repeat
             response1 = seriale.readline() 
             response=response+response1   
         if len(response)<20:
@@ -148,10 +153,11 @@ def leggi_chiave():
             print('Non funzionante')
             return()    
     seriale.close()    
+#Write key function
 def scrivi_chiave(n_stringa_int,stringa_hex):
     global porta 
     stringa_hex=bytearray.fromhex(stringa_hex)
-    seriale = serial.Serial(porta, 115200, timeout=5)
+    seriale = serial.Serial(porta, 115200, timeout=1) #check the correct time-out
     if seriale.is_open:
         print ("\n Il collegamento è stato effettuato con successo  \n")
     else:
@@ -210,7 +216,7 @@ def scrivi_chiave(n_stringa_int,stringa_hex):
     else:
         print('Non funzionante')
         return()
-    print('WAKEUP')
+    print('WAKEUP') #is necesary new wake-up after write block
     seriale.write([85,85,0,0,0,0,0,255,3,253,212,20,1,23,0])
     response = seriale.readline()
     if len(response)==15:
